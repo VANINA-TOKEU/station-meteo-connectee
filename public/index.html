@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Station Météo Connectée</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Space Grotesk',sans-serif;background:#f0f4fa;color:#0a1f4e;}
+
+/* ═══ ALERTES ═══ */
+.alerts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:900px){.alerts-grid{grid-template-columns:1fr;}}
+.alert-stat{border-radius:var(--radius);padding:22px;display:flex;align-items:center;gap:18px;border:1px solid;}
+.alert-stat.danger{background:rgba(180,0,30,0.06);border-color:rgba(180,0,30,0.18);}
+.alert-stat.warn{background:rgba(180,120,0,0.06);border-color:rgba(180,120,0,0.18);}
+.alert-stat.ok{background:rgba(0,120,60,0.06);border-color:rgba(0,120,60,0.18);}
+.alert-stat.info{background:rgba(10,60,200,0.06);border-color:rgba(10,60,200,0.18);}
+.as-icon{font-size:2.2rem;width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.as-icon.danger{background:rgba(180,0,30,0.10);}
+.as-icon.warn{background:rgba(180,120,0,0.10);}
+.as-icon.ok{background:rgba(0,120,60,0.10);}
+.as-icon.info{background:rgba(10,60,200,0.10);}
+.as-count{font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;}
+.as-count.danger{color:#b91c1c;}.as-count.warn{color:#92620a;}.as-count.ok{color:#166534;}.as-count.info{color:#1e3a8a;}
+.as-label{font-size:.75rem;font-weight:600;color:#6b85b0;text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
+.card{background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);border:1px solid rgba(10,35,90,0.10);border-radius:var(--radius);padding:22px;margin-bottom:24px;box-shadow:0 4px 20px rgba(10,35,90,0.06);}
+.al-item{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:14px;margin-bottom:10px;border-left:4px solid;animation:fadeup .4s ease both;}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.al-item.danger{background:rgba(180,0,30,0.05);border-color:#b91c1c;}
+.al-item.warn{background:rgba(180,120,0,0.05);border-color:#b45309;}
+.al-item.ok{background:rgba(0,120,60,0.05);border-color:#1a6e3c;}
+.al-ico{font-size:1.4rem;margin-top:2px;}
+.al-msg{font-size:.88rem;font-weight:600;color:#0a1e5e;}
+.al-time{font-size:.72rem;color:#6b85b0;margin-top:3px;}
+.al-level{font-size:.62rem;font-weight:800;padding:2px 10px;border-radius:20px;margin-left:auto;flex-shrink:0;border:1px solid;}
+.al-level.danger{background:rgba(180,0,30,0.10);color:#b91c1c;border-color:rgba(180,0,30,0.2);}
+.al-level.warn{background:rgba(180,120,0,0.10);color:#92620a;border-color:rgba(180,120,0,0.2);}
+.al-level.ok{background:rgba(0,120,60,0.10);color:#166534;border-color:rgba(0,120,60,0.2);}
+.clear-btn{padding:9px 22px;border-radius:40px;background:rgba(180,0,30,0.08);color:#b91c1c;border:1px solid rgba(180,0,30,0.2);font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;margin-left:auto;}
+.clear-btn:hover{background:#b91c1c;color:#fff;}
+#no-alerts{text-align:center;padding:40px;color:#6b85b0;font-size:.9rem;}
+.seuils-blocs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.seuil-bloc{background:rgba(255,255,255,0.85);border:1px solid rgba(10,35,90,0.10);border-radius:14px;overflow:hidden;}
+.seuil-bloc-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(10,30,94,0.04);border-bottom:1px solid rgba(10,35,90,0.08);}
+.seuil-bloc-header strong{font-size:.82rem;font-weight:700;color:#0a1e5e;}
+.seuil-row{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-bottom:1px solid rgba(10,35,90,0.05);}
+.seuil-row:last-child{border-bottom:none;}
+.seuil-row-label{font-size:.75rem;color:#374151;flex:1;}
+.seuil-row-val{font-size:.72rem;font-family:'Orbitron',monospace;font-weight:700;color:#0a3cbf;margin:0 10px;}
+.seuil-badge{font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap;border:1px solid;}
+.seuil-badge.ok{background:rgba(0,120,60,0.08);color:#166534;border-color:rgba(0,120,60,0.18);}
+.seuil-badge.warn{background:rgba(180,120,0,0.08);color:#92620a;border-color:rgba(180,120,0,0.18);}
+.seuil-badge.danger{background:rgba(180,0,30,0.08);color:#b91c1c;border-color:rgba(180,0,30,0.18);}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{
+  width:260px;min-height:100vh;
+  background:linear-gradient(180deg,#0a1e5e 0%,#061240 100%);
+  border-right:1px solid rgba(255,255,255,0.10);
+  position:fixed;left:0;top:0;bottom:0;z-index:400;
+  display:flex;flex-direction:column;
+  box-shadow:6px 0 50px rgba(0,0,0,0.25);
+}
+.brand{padding:28px 22px 24px;border-bottom:1px solid rgba(255,255,255,0.10);position:relative;overflow:hidden;}
+.brand::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,180,255,0.5),transparent);}
+.brand-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(100,180,255,0.15),transparent 65%);}
+.brand-icon{font-size:3rem;display:block;text-align:center;margin-bottom:12px;filter:drop-shadow(0 0 20px rgba(0,229,255,0.7));animation:levitate 4s ease-in-out infinite;}
+@keyframes levitate{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-10px) rotate(3deg);}}
+.brand-name{font-family:'Orbitron',monospace;font-size:.78rem;font-weight:900;letter-spacing:.10em;text-align:center;line-height:1.55;background:linear-gradient(120deg,#ffffff 0%,#a8c8ff 50%,#ffffff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.brand-tagline{text-align:center;font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(180,210,255,0.6);margin-top:6px;}
+.live-chip{margin:14px 16px 4px;padding:10px 16px;border-radius:14px;background:rgba(0,200,100,0.12);border:1px solid rgba(0,200,100,0.25);display:flex;align-items:center;gap:10px;}
+.live-dot{width:9px;height:9px;border-radius:50%;background:#00e676;box-shadow:0 0 0 3px rgba(0,230,118,0.25);animation:ripple 1.6s infinite;}
+@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(0,230,118,0.5);}70%{box-shadow:0 0 0 8px rgba(0,230,118,0);}100%{box-shadow:0 0 0 0 rgba(0,230,118,0);}}
+.live-text{font-size:.72rem;font-weight:700;color:#4fffaa;}
+.live-sub{font-size:.6rem;color:rgba(180,210,255,0.55);}
+.nav-section{padding:18px 16px 5px;font-size:.58rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(180,210,255,0.35);}
+.nav-item{display:flex;align-items:center;gap:13px;padding:11px 20px;margin:2px 10px;border-radius:13px;font-size:.86rem;font-weight:600;color:rgba(200,225,255,0.5);cursor:pointer;transition:all .22s;position:relative;}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);}
+.nav-item.active{background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(100,180,255,0.12));border:1px solid rgba(255,255,255,0.18);color:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.15);}
+.nav-item.active::before{content:'';position:absolute;left:-1px;top:25%;bottom:25%;width:3px;border-radius:2px;background:linear-gradient(#ffffff,#7ab8ff);}
+.ni{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(255,80,80,0.2);color:#ff8fa0;border:1px solid rgba(255,80,80,0.3);}
+.sidebar-footer{margin-top:auto;padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);font-size:.68rem;color:rgba(180,210,255,0.3);}
+
+/* ═══ PAGE ═══ */
+.page{
+  margin-left:260px;flex:1;display:flex;flex-direction:column;
+  min-height:100vh;height:100vh;overflow-y:auto;
+  background:#f0f4fa;
+}
+.topbar{background:rgba(255,255,255,0.92);backdrop-filter:blur(24px);border-bottom:1px solid rgba(10,35,90,0.12);padding:0 34px;height:72px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 4px 24px rgba(10,35,90,0.08);}
+.tb-title h1{font-family:'Orbitron',monospace;font-size:.98rem;font-weight:900;letter-spacing:.06em;color:#0a1e5e;white-space:nowrap;}
+.tb-title p{font-size:.66rem;color:#6b85b0;letter-spacing:.18em;text-transform:uppercase;margin-top:2px;}
+.tb-right{display:flex;align-items:center;gap:11px;}
+.conn-pill{display:flex;align-items:center;gap:8px;border-radius:40px;padding:7px 18px;font-size:.7rem;font-weight:700;letter-spacing:.07em;border:1px solid;transition:all .3s;}
+.conn-pill.connecting{border-color:rgba(180,120,0,.4);color:#92620a;background:rgba(255,200,0,.08);}
+.conn-pill.connected{border-color:rgba(0,120,60,.4);color:#1a6e3c;background:rgba(0,180,80,.07);}
+.conn-pill.disconnected{border-color:rgba(180,0,30,.4);color:#b91c1c;background:rgba(220,0,30,.06);}
+.cdot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:ripple 1.4s infinite;}
+.clock-pill{font-family:'Orbitron',monospace;font-size:.84rem;font-weight:700;padding:8px 18px;border-radius:40px;background:#0a1e5e;color:#fff;letter-spacing:.06em;}
+.content{padding:28px 34px;flex:1;}
+
+/* ═══ VUE ACCUEIL ═══ */
+#view-home{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 72px);text-align:center;
+}
+.home-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.4rem,3.5vw,2.4rem);
+  font-weight:900;
+  letter-spacing:.12em;
+  line-height:1.45;
+  color:#0a1e5e;
+  text-shadow:0 4px 30px rgba(10,35,120,0.12);
+}
+.home-title span{
+  display:block;
+  font-size:clamp(.8rem,2vw,1.1rem);
+  font-weight:600;
+  letter-spacing:.3em;
+  color:#6b85b0;
+  margin-top:14px;
+  text-transform:uppercase;
+}
+.home-divider{
+  width:100px;height:3px;margin:28px auto;
+  background:linear-gradient(90deg,transparent,#0a3cbf,transparent);
+  border-radius:2px;
+}
+.home-desc{
+  max-width:460px;
+  font-size:.92rem;color:#6b85b0;line-height:1.7;font-weight:500;
+}
+.home-btn{
+  margin-top:36px;
+  padding:15px 44px;
+  font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:#fff;background:linear-gradient(135deg,#0a2a6e,#1a4aaa);
+  border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 8px 40px rgba(10,60,200,0.3);
+  transition:transform .25s,box-shadow .25s;
+}
+.home-btn:hover{transform:translateY(-3px);box-shadow:0 14px 50px rgba(10,80,255,0.4);}
+
+/* ═══ VUE OVERVIEW ═══ */
+#view-overview{display:none;}
+.sec{display:flex;align-items:center;gap:11px;margin-bottom:16px;margin-top:4px;}
+.sec-accent{width:4px;height:24px;border-radius:3px;flex-shrink:0;}
+.sec h2{font-family:'Orbitron',monospace;font-size:.69rem;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:#0a1e5e;}
+#offline-banner{display:none;align-items:center;gap:14px;background:rgba(180,120,0,.06);border:1px solid rgba(180,120,0,.2);border-radius:14px;padding:14px 20px;margin-bottom:22px;font-size:.86rem;color:#92620a;font-weight:700;}
+#offline-banner.show{display:flex;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px;margin-bottom:26px;}
+.kpi-card{border-radius:20px;padding:24px 22px 22px;color:#fff;position:relative;overflow:hidden;border:1px solid transparent;cursor:default;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .35s;animation:kpipop .55s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes kpipop{from{opacity:0;transform:scale(.85) translateY(22px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.kpi-card:hover{transform:translateY(-9px) scale(1.03);}
+.kpi-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.20),transparent 65%);}
+.kpi-card.temp{background:linear-gradient(145deg,#c0392b,#e74c3c,#ff6b35);border-color:rgba(255,107,107,0.3);box-shadow:0 12px 40px rgba(231,76,60,0.5);}
+.kpi-card.hum{background:linear-gradient(145deg,#006064,#00acc1,#00e5ff);border-color:rgba(0,229,255,0.3);box-shadow:0 12px 40px rgba(0,172,193,0.5);}
+.kpi-card.pres{background:linear-gradient(145deg,#4a148c,#8e24aa,#ce93d8);border-color:rgba(187,92,255,0.3);box-shadow:0 12px 40px rgba(142,36,170,0.55);}
+.kpi-card.wind{background:linear-gradient(145deg,#01579b,#039be5,#81d4fa);border-color:rgba(41,121,255,0.3);box-shadow:0 12px 40px rgba(3,155,229,0.5);}
+.kpi-card.rain{background:linear-gradient(145deg,#1a237e,#3949ab,#7986cb);border-color:rgba(83,109,254,0.3);box-shadow:0 12px 40px rgba(57,73,171,0.55);}
+.kpi-card.lux{background:linear-gradient(145deg,#bf360c,#f57c00,#ffca28);border-color:rgba(255,171,0,0.3);box-shadow:0 12px 40px rgba(245,124,0,0.55);}
+.kpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.kpi-label{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.22em;opacity:.88;}
+.kpi-icon-box{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:1.55rem;box-shadow:0 4px 16px rgba(0,0,0,0.25);}
+.kpi-val{display:flex;align-items:baseline;gap:5px;margin-bottom:7px;}
+.kpi-value{font-family:'Orbitron',monospace;font-size:2.5rem;font-weight:900;line-height:1;text-shadow:0 2px 24px rgba(0,0,0,0.35);}
+.kpi-unit{font-size:.92rem;font-weight:700;opacity:.82;}
+.kpi-sub{font-size:.73rem;font-weight:600;opacity:.85;}
+.kpi-bar-track{margin-top:13px;background:rgba(255,255,255,0.17);border-radius:6px;height:6px;overflow:hidden;}
+.kpi-bar{height:6px;border-radius:6px;background:linear-gradient(90deg,rgba(255,255,255,0.5),rgba(255,255,255,0.95));transition:width .9s cubic-bezier(.34,1.56,.64,1);}
+.kpi-card:nth-child(1){animation-delay:.04s}.kpi-card:nth-child(2){animation-delay:.09s}.kpi-card:nth-child(3){animation-delay:.14s}.kpi-card:nth-child(4){animation-delay:.19s}.kpi-card:nth-child(5){animation-delay:.24s}.kpi-card:nth-child(6){animation-delay:.29s}
+
+/* ═══ VUE ALERTES ═══ */
+#view-alerts{display:none;}
+
+@media(max-width:780px){
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .sidebar{display:none;}.page{margin-left:0;}
+}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(10,35,90,0.15);border-radius:4px;}
+</style>
+</head>
+<body style="display:flex;">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brand-glow"></div>
+    <div class="brand-name">STATION MÉTÉO<br>CONNECTÉE<br>DASHBOARD</div>
+    <div class="brand-tagline">ESP32 · IoT · Temps Réel</div>
+  </div>
+  <div class="live-chip">
+    <div class="live-dot"></div>
+    <div>
+      <div class="live-text">SYSTÈME ACTIF</div>
+      <div class="live-sub">Capteurs connectés</div>
+    </div>
+  </div>
+  <div class="nav-section">Navigation</div>
+  <div class="nav-item active" id="nav-home" onclick="showView('home')">
+    <span class="ni"></span>Accueil
+  </div>
+  <div class="nav-item" id="nav-overview" onclick="showView('overview')">
+    <span class="ni"></span>Vue d'ensemble
+  </div>
+  <div class="nav-item" id="nav-alerts" onclick="showView('alerts')">
+    <span class="ni"></span>Alertes
+  </div>
+  <div class="nav-section">Capteurs Actifs</div>
+  <div class="nav-item"><span class="ni">&#x1F321;</span>Température</div>
+  <div class="nav-item"><span class="ni">&#x1F4A7;</span>Hygromètre</div>
+  <div class="nav-item"><span class="ni">&#x1F300;</span>Baromètre</div>
+  <div class="nav-item"><span class="ni">&#x1F4A8;</span>Anémomètre</div>
+  <div class="nav-item"><span class="ni">&#x1F327;</span>Pluviomètre</div>
+  <div class="nav-item"><span class="ni">&#x2600;</span>Pyranomètre</div>
+  <div class="sidebar-footer">ESP32 · Firmware v2.1.4</div>
+</nav>
+
+<!-- PAGE -->
+<div class="page">
+  <header class="topbar">
+    <div class="tb-title">
+      <h1>STATION MÉTÉO CONNECTÉE</h1>
+      <p>Surveillance temps réel · ESP32 · IoT</p>
+    </div>
+    <div class="tb-right">
+      <div class="conn-pill connecting" id="conn-badge">
+        <div class="cdot"></div><span id="conn-text">CONNEXION...</span>
+      </div>
+      <div class="clock-pill" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ACCUEIL -->
+    <div id="view-home">
+      <div class="home-title">
+        STATION MÉTÉO CONNECTÉE
+        <span>Système IoT</span>
+      </div>
+      <div class="home-divider"></div>
+      <p class="home-desc">
+        Surveillance météorologique en temps réel via ESP32.
+        Température, humidité, pression, vent, pluie et luminosité.
+      </p>
+    </div>
+
+    <!-- VUE D'ENSEMBLE -->
+    <div id="view-overview">
+      <div id="offline-banner">
+        <span>Station hors ligne — En attente de l'ESP32...</span>
+        <span id="last-update" style="margin-left:auto;font-size:.73rem;"></span>
+      </div>
+      <div class="sec">
+        <div class="sec-accent" style="background:linear-gradient(#00e5ff,#bb5cff)"></div>
+        <h2>Mesures en Temps Réel</h2>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card temp">
+          <div class="kpi-top"><span class="kpi-label">Température</span><div class="kpi-icon-box">&#x1F321;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-temp">--</span><span class="kpi-unit">°C</span></div>
+          <div class="kpi-sub" id="s-temp">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-temp" style="width:0%"></div></div>
+        </div>
+        <div class="kpi-card hum">
+          <div class="kpi-top"><span class="kpi-label">Humidité</span><div class="kpi-icon-box">&#x1F4A7;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-hum">--</span><span class="kpi-unit">%</span></div>
+          <div class="kpi-sub" id="s-hum">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-hum" style="width:0%"></div></div>
+        </div>
+        <div class="kpi-card pres">
+          <div class="kpi-top"><span class="kpi-label">Pression Atm.</span><div class="kpi-icon-box">&#x1F300;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-pres">--</span><span class="kpi-unit">hPa</span></div>
+          <div class="kpi-sub" id="s-pres">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-pres" style="width:0%"></div></div>
+        </div>
+        <div class="kpi-card wind">
+          <div class="kpi-top"><span class="kpi-label">Vent</span><div class="kpi-icon-box">&#x1F4A8;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-wind">--</span><span class="kpi-unit">km/h</span></div>
+          <div class="kpi-sub" id="s-wind">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-wind" style="width:0%"></div></div>
+        </div>
+        <div class="kpi-card rain">
+          <div class="kpi-top"><span class="kpi-label">Pluviométrie</span><div class="kpi-icon-box">&#x1F327;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-rain">--</span><span class="kpi-unit">mm</span></div>
+          <div class="kpi-sub" id="s-rain">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-rain" style="width:0%"></div></div>
+        </div>
+        <div class="kpi-card lux">
+          <div class="kpi-top"><span class="kpi-label">Luminosité</span><div class="kpi-icon-box">&#x2600;</div></div>
+          <div class="kpi-val"><span class="kpi-value" id="v-lux">--</span><span class="kpi-unit">klx</span></div>
+          <div class="kpi-sub" id="s-lux">En attente de données...</div>
+          <div class="kpi-bar-track"><div class="kpi-bar" id="b-lux" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTES (vide — à connecter) -->
+    <div id="view-alerts" style="display:none">
+
+  <!-- Résumé -->
+  <div class="sec">
+    <div class="sec-accent" style="background:linear-gradient(#b91c1c,#f97316)"></div>
+    <h2>Résumé</h2>
+  </div>
+  <div class="alerts-grid">
+    <div class="alert-stat danger">
+      <div class="as-icon danger"></div>
+      <div><div class="as-count danger" id="cnt-danger">0</div><div class="as-label">Critiques</div></div>
+    </div>
+    <div class="alert-stat warn">
+      <div class="as-icon warn"></div>
+      <div><div class="as-count warn" id="cnt-warn">0</div><div class="as-label">Vigilance</div></div>
+    </div>
+    <div class="alert-stat ok">
+      <div class="as-icon ok"></div>
+      <div><div class="as-count ok" id="cnt-ok">0</div><div class="as-label">Normaux</div></div>
+    </div>
+    <div class="alert-stat info">
+      <div class="as-icon info"></div>
+      <div><div class="as-count info" id="cnt-total">0</div><div class="as-label">Total</div></div>
+    </div>
+  </div>
+
+  <!-- Journal -->
+  <div class="sec">
+    <div class="sec-accent" style="background:linear-gradient(#b91c1c,#b45309)"></div>
+    <h2>Journal en temps réel</h2>
+    <button class="clear-btn" onclick="clearAlerts()">Effacer</button>
+  </div>
+  <div class="card">
+    <div id="no-alerts">En attente de données ESP32...</div>
+    <div id="alerts-log"></div>
+  </div>
+
+  <!-- Seuils -->
+  <div class="sec" style="margin-top:8px;">
+    <div class="sec-accent" style="background:linear-gradient(#0a1e5e,#4a90d9)"></div>
+    <h2>Seuils configurés</h2>
+  </div>
+  <div class="seuils-blocs">
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Température</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Température basse</span><span class="seuil-row-val">&lt; 15 °C</span><span class="seuil-badge warn">Faible</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Conditions normales</span><span class="seuil-row-val">15 – 34 °C</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Forte chaleur</span><span class="seuil-row-val">35 – 39 °C</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Risque thermique élevé</span><span class="seuil-row-val">≥ 40 °C</span><span class="seuil-badge danger">Danger</span></div>
+    </div>
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Humidité</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Air sec</span><span class="seuil-row-val">&lt; 30 %</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Humidité normale</span><span class="seuil-row-val">30 – 79 %</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Humidité élevée</span><span class="seuil-row-val">80 – 89 %</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Risque forte humidité</span><span class="seuil-row-val">≥ 90 %</span><span class="seuil-badge danger">Danger</span></div>
+    </div>
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Vitesse du vent</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Vent faible</span><span class="seuil-row-val">0 – 20 km/h</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Vent modéré</span><span class="seuil-row-val">21 – 39 km/h</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Vent fort</span><span class="seuil-row-val">40 – 69 km/h</span><span class="seuil-badge warn">Alerte</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Risque de tempête</span><span class="seuil-row-val">≥ 70 km/h</span><span class="seuil-badge danger">Danger</span></div>
+    </div>
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Pression atmosphérique</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Risque d'orage/tempête</span><span class="seuil-row-val">&lt; 990 hPa</span><span class="seuil-badge danger">Danger</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Pression basse</span><span class="seuil-row-val">990 – 999 hPa</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Pression stable</span><span class="seuil-row-val">1000 – 1025 hPa</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Forte pression atm.</span><span class="seuil-row-val">&gt; 1025 hPa</span><span class="seuil-badge warn">Vigilance</span></div>
+    </div>
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Luminosité</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Très faible luminosité</span><span class="seuil-row-val">&lt; 50 lux</span><span class="seuil-badge warn">Faible</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Luminosité normale</span><span class="seuil-row-val">50 – 1000 lux</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Forte luminosité</span><span class="seuil-row-val">1000 – 50000 lux</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Exposition intense</span><span class="seuil-row-val">&gt; 50000 lux</span><span class="seuil-badge danger">Danger</span></div>
+    </div>
+    <div class="seuil-bloc">
+      <div class="seuil-bloc-header"><strong>Pluviométrie</strong></div>
+      <div class="seuil-row"><span class="seuil-row-label">Pas de pluie</span><span class="seuil-row-val">0 mm/h</span><span class="seuil-badge ok">Normal</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Pluie faible</span><span class="seuil-row-val">1 – 10 mm/h</span><span class="seuil-badge warn">Vigilance</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Forte pluie</span><span class="seuil-row-val">11 – 30 mm/h</span><span class="seuil-badge warn">Alerte</span></div>
+      <div class="seuil-row"><span class="seuil-row-label">Risque d'inondation</span><span class="seuil-row-val">&gt; 30 mm/h</span><span class="seuil-badge danger">Danger</span></div>
+    </div>
+  </div>
+
+</div>
+    
+  </div>
+</div>
+
+<script>
+/* Navigation */
+function showView(v){
+  ['home','overview','alerts'].forEach(n=>{
+    document.getElementById('view-'+n).style.display = n===v ? (n==='home'?'flex':'block') : 'none';
+    document.getElementById('nav-'+n).classList.toggle('active', n===v);
+  });
+  if(v==='overview' || v==='alerts') connectWS();
+}
+
+/* Clock */
+setInterval(()=>{
+  const c=document.getElementById('clock');
+  if(c) c.textContent=new Date().toLocaleTimeString('fr-FR');
+},1000);
+
+/* Data helpers */
+const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+const degToDir=d=>dirs[Math.round(d/22.5)%16];
+const bf=[[0,'Calme'],[5,'Très légère brise'],[11,'Légère brise'],[19,'Petite brise'],[28,'Jolie brise'],[38,'Brise fraîche'],[49,'Vent frais'],[61,'Grand frais'],[74,'Coup de vent'],[88,'Fort coup de vent'],[102,'Tempête'],[117,'Violente tempête'],[999,'Ouragan']];
+const getBf=v=>bf.find(([b])=>v<b)[1];
+
+function normalize(d){
+  return{
+    temp:d.temperature??d.temp??0, hum:d.humidite??d.hum??0,
+    pres:d.pression_atmospherique??d.pres??1013,
+    wind_spd:d.vitesse_vent??d.wind_spd??0,
+    wind_dir:d.vent_direction??d.wind_dir??0,
+    rain:d.pluviometrie??d.rain??0,
+    lux:d.luminosite??d.lux??0,
+    timestamp:d.timestamp
+  };
+}
+
+function updateKPI(raw){
+  const d=normalize(raw);
+  document.getElementById('offline-banner').classList.remove('show');
+  document.getElementById('v-temp').textContent=d.temp.toFixed(1);
+  document.getElementById('b-temp').style.width=Math.min((d.temp+10)/60*100,100)+'%';
+  document.getElementById('s-temp').textContent='Ressenti : '+((d.temp+d.hum*0.05).toFixed(0))+'°C';
+  document.getElementById('v-hum').textContent=Math.round(d.hum);
+  document.getElementById('b-hum').style.width=d.hum+'%';
+  document.getElementById('s-hum').textContent=d.hum<30?'Sec':d.hum<60?'Confortable':d.hum<80?'Humide':'Très humide';
+  document.getElementById('v-pres').textContent=Math.round(d.pres);
+  document.getElementById('b-pres').style.width=Math.min(((d.pres-950)/100*100),100)+'%';
+  document.getElementById('s-pres').textContent=d.pres<1000?'Dépression':d.pres>1020?'Anticyclone':'Stable';
+  document.getElementById('v-wind').textContent=Math.round(d.wind_spd);
+  document.getElementById('b-wind').style.width=Math.min(d.wind_spd/120*100,100)+'%';
+  document.getElementById('s-wind').textContent=degToDir(d.wind_dir)+' · '+getBf(d.wind_spd);
+  document.getElementById('v-rain').textContent=d.rain.toFixed(1);
+  document.getElementById('b-rain').style.width=Math.min(d.rain/30*100,100)+'%';
+  document.getElementById('s-rain').textContent=d.rain<1?'Pas de pluie':d.rain<5?'Légère pluie':'Forte pluie';
+  document.getElementById('v-lux').textContent=(d.lux/1000).toFixed(0);
+  document.getElementById('b-lux').style.width=Math.min(d.lux/100000*100,100)+'%';
+  document.getElementById('s-lux').textContent=d.lux<1000?'Nuit / Couvert':d.lux<10000?'Nuageux':d.lux<50000?'Ensoleillé':'Plein soleil';
+  const tl=new Date(d.timestamp).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('last-update').textContent='Mis à jour : '+tl;
+
+  traiterDonnees({
+    temperature:            d.temp,
+    humidite:               d.hum,
+    pression_atmospherique: d.pres,
+    vitesse_vent:           d.wind_spd,
+    pluviometrie:           d.rain,
+    luminosite:             d.lux
+  });
+}
+
+/* ═══ Alertes ═══ */
+let alertsList=[], cntDanger=0, cntWarn=0, cntOk=0;
+const dernierEtat={};
+
+const SEUILS={
+  temperature:[
+    {min:-Infinity,max:15,      level:'warn',  msg:'Température basse'},
+    {min:15,       max:35,      level:'ok',    msg:'Conditions normales'},
+    {min:35,       max:40,      level:'warn',  msg:'Forte chaleur'},
+    {min:40,       max:Infinity,level:'danger',msg:'Risque thermique élevé'},
+  ],
+  humidite:[
+    {min:-Infinity,max:30,      level:'warn',  msg:'Air sec'},
+    {min:30,       max:80,      level:'ok',    msg:'Humidité normale'},
+    {min:80,       max:90,      level:'warn',  msg:'Humidité élevée'},
+    {min:90,       max:Infinity,level:'danger',msg:'Risque de forte humidité'},
+  ],
+  vitesse_vent:[
+    {min:0, max:21,      level:'ok',    msg:'Vent faible'},
+    {min:21,max:40,      level:'warn',  msg:'Vent modéré'},
+    {min:40,max:70,      level:'warn',  msg:'Vent fort'},
+    {min:70,max:Infinity,level:'danger',msg:'Risque de tempête'},
+  ],
+  pression_atmospherique:[
+    {min:-Infinity,max:990, level:'danger',msg:"Risque d'orage/tempête"},
+    {min:990,      max:1000,level:'warn',  msg:'Pression basse'},
+    {min:1000,     max:1026,level:'ok',    msg:'Pression stable'},
+    {min:1026,     max:Infinity,level:'warn',msg:'Forte pression atmosphérique'},
+  ],
+  luminosite:[
+    {min:-Infinity,max:50,   level:'warn',  msg:'Très faible luminosité'},
+    {min:50,       max:1000, level:'ok',    msg:'Luminosité normale'},
+    {min:1000,     max:50000,level:'warn',  msg:'Forte luminosité'},
+    {min:50000,    max:Infinity,level:'danger',msg:'Exposition lumineuse intense'},
+  ],
+  pluviometrie:[
+    {min:0, max:1, level:'ok',    msg:'Pas de pluie'},
+    {min:1, max:11,level:'warn',  msg:'Pluie faible'},
+    {min:11,max:31,level:'warn',  msg:'Forte pluie'},
+    {min:31,max:Infinity,level:'danger',msg:"Risque d'inondation"},
+  ],
+};
+
+function detecterAlerte(capteur,valeur){
+  const regles=SEUILS[capteur];if(!regles)return null;
+  for(const r of regles)if(valeur>=r.min&&valeur<r.max)return{level:r.level,msg:`${r.msg} (${valeur})`};
+  return null;
+}
+
+function traiterDonnees(data){
+  const now=new Date().toLocaleString('fr-FR');
+  for(const capteur in SEUILS){
+    if(data[capteur]===undefined)continue;
+    const alerte=detecterAlerte(capteur,data[capteur]);
+    if(!alerte)continue;
+    if(dernierEtat[capteur]===alerte.level)continue;
+    dernierEtat[capteur]=alerte.level;
+    addAlert(alerte.level,alerte.msg,now);
+  }
+}
+
+function addAlert(level,msg,time){
+  alertsList.unshift({level,msg,time});
+  if(level==='danger')cntDanger++;
+  else if(level==='warn')cntWarn++;
+  else cntOk++;
+  document.getElementById('cnt-danger').textContent=cntDanger;
+  document.getElementById('cnt-warn').textContent=cntWarn;
+  document.getElementById('cnt-ok').textContent=cntOk;
+  document.getElementById('cnt-total').textContent=alertsList.length;
+  renderAlerts();
+}
+
+function renderAlerts(){
+  const log=document.getElementById('alerts-log');
+  const nd=document.getElementById('no-alerts');
+  if(!alertsList.length){nd.style.display='block';log.innerHTML='';return;}
+  nd.style.display='none';
+  const ico={danger:'&#x1F6A8;',warn:'&#x26A0;',ok:'&#x2705;'};
+  const lbl={danger:'Critique',warn:'Vigilance',ok:'Normal'};
+  log.innerHTML=alertsList.map(a=>`
+    <div class="al-item ${a.level}">
+      <div class="al-ico">${ico[a.level]}</div>
+      <div><div class="al-msg">${a.msg}</div><div class="al-time">${a.time}</div></div>
+      <span class="al-level ${a.level}">${lbl[a.level]}</span>
+    </div>`).join('');
+}
+
+function clearAlerts(){
+  alertsList=[];cntDanger=0;cntWarn=0;cntOk=0;
+  Object.keys(dernierEtat).forEach(k=>delete dernierEtat[k]);
+  ['cnt-danger','cnt-warn','cnt-ok','cnt-total'].forEach(id=>document.getElementById(id).textContent=0);
+  renderAlerts();
+}
+
+/* Message de démarrage */
+addAlert('ok','Système démarré avec succès',new Date().toLocaleString('fr-FR'));
+
+/* WebSocket */
+let ws, retryTimer, wsStarted=false;
+function connectWS(){
+  if(wsStarted) return;
+  wsStarted=true;
+  const WS_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';
+  const badge=document.getElementById('conn-badge');
+  const connText=document.getElementById('conn-text');
+  function setStatus(s){
+    badge.className='conn-pill '+s;
+    connText.textContent={connecting:'CONNEXION...',connected:'EN LIGNE',disconnected:'HORS LIGNE'}[s];
+  }
+  function connect(){
+    setStatus('connecting'); ws=new WebSocket(WS_URL);
+    ws.onopen=()=>{setStatus('connected');clearTimeout(retryTimer);};
+    ws.onmessage=e=>{
+      try{
+        const m=JSON.parse(e.data);
+        if(m.type==='data') updateKPI(m.data);
+        if(m.type==='history'&&m.data&&m.data.length) updateKPI(m.data[m.data.length-1]);
+      }catch(err){console.error(err);}
+    };
+    ws.onclose=()=>{
+      setStatus('disconnected');
+      document.getElementById('offline-banner').classList.add('show');
+      retryTimer=setTimeout(connect,5000);
+    };
+    ws.onerror=()=>ws.close();
+  }
+  connect();
+}
+</script>
+</body>
+</html>
