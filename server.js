@@ -297,7 +297,71 @@ app.get('/api/stats', (req, res) => {
 
   res.json(stats);
 });
+// ===============================
+// PREVISIONS METEO (basées sur pression 24h)
+// ===============================
 
+app.get('/api/previsions', (req, res) => {
+
+  const sql = `
+    SELECT pression_atmospherique, date
+    FROM mesures
+    WHERE date >= NOW() - INTERVAL 24 HOUR
+    ORDER BY date ASC
+  `;
+
+  db.query(sql, (err, result) => {
+
+    if (err) {
+      return res.status(500).json({ error: 'Erreur SQL' });
+    }
+
+    if (!result || result.length < 2) {
+      return res.json({
+        icone: '🌤️',
+        message: 'Données insuffisantes pour une prévision',
+        confiance: 'faible'
+      });
+    }
+
+    const milieu = Math.floor(result.length / 2);
+    const premiereMoitie = result.slice(0, milieu);
+    const deuxiemeMoitie = result.slice(milieu);
+
+    const moyennePremiere =
+      premiereMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / premiereMoitie.length;
+
+    const moyenneDeuxieme =
+      deuxiemeMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / deuxiemeMoitie.length;
+
+    const delta = moyenneDeuxieme - moyennePremiere;
+
+    let prevision = {
+      icone: '🌤️',
+      message: 'Temps stable',
+      confiance: 'moyenne',
+      delta: delta.toFixed(2)
+    };
+
+    if (delta < -3) {
+      prevision = {
+        icone: '🌧️',
+        message: 'Pluie probable dans les prochaines heures',
+        confiance: 'élevée',
+        delta: delta.toFixed(2)
+      };
+    } else if (delta > 3) {
+      prevision = {
+        icone: '☀️',
+        message: 'Beau temps attendu',
+        confiance: 'élevée',
+        delta: delta.toFixed(2)
+      };
+    }
+
+    res.json(prevision);
+  });
+});
 // ===============================
 // HEALTH CHECK
 // ===============================
