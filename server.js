@@ -304,7 +304,7 @@ app.get('/api/stats', (req, res) => {
 app.get('/api/previsions', (req, res) => {
 
   const sql = `
-    SELECT pression_atmospherique, date
+    SELECT pression, date
     FROM mesures
     WHERE date >= NOW() - INTERVAL 24 HOUR
     ORDER BY date ASC
@@ -329,10 +329,10 @@ app.get('/api/previsions', (req, res) => {
     const deuxiemeMoitie = result.slice(milieu);
 
     const moyennePremiere =
-      premiereMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / premiereMoitie.length;
+      premiereMoitie.reduce((sum, r) => sum + r.pression, 0) / premiereMoitie.length;
 
     const moyenneDeuxieme =
-      deuxiemeMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / deuxiemeMoitie.length;
+      deuxiemeMoitie.reduce((sum, r) => sum + r.pression, 0) / deuxiemeMoitie.length;
 
     const delta = moyenneDeuxieme - moyennePremiere;
 
