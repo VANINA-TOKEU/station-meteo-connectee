@@ -158,13 +158,14 @@ app.post('/api/data', authESP32, (req, res) => {
     (
       temperature,
       humidite,
-      pression,
+      pression_atmospherique,
       vitesse_vent,
       luminosite,
       pluviometrie
     )
     VALUES (?, ?, ?, ?, ?, ?)
   `;
+  ;
 
   db.query(
     sql,
