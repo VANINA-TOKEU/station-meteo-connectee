@@ -314,8 +314,9 @@ app.get('/api/previsions', (req, res) => {
   db.query(sql, (err, result) => {
 
     if (err) {
-      return res.status(500).json({ error: 'Erreur SQL' });
-    }
+  console.log('Erreur previsions:', err.message);
+  return res.status(500).json({ error: err.message });
+  }
 
     if (!result || result.length < 2) {
       return res.json({
