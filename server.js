@@ -305,10 +305,10 @@ app.get('/api/stats', (req, res) => {
 app.get('/api/previsions', (req, res) => {
 
   const sql = `
-    SELECT pression, date
+    SELECT pression_atmospherique, \`Date\`
     FROM mesures
-    WHERE date >= NOW() - INTERVAL 24 HOUR
-    ORDER BY date ASC
+    WHERE \`Date\` >= NOW() - INTERVAL 24 HOUR
+    ORDER BY \`Date\` ASC
   `;
 
   db.query(sql, (err, result) => {
