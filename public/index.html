@@ -216,13 +216,16 @@ body{font-family:'Space Grotesk',sans-serif;background:#f0f4fa;color:#0a1f4e;}
   <div class="nav-item" id="nav-alerts" onclick="showView('alerts')">
     <span class="ni"></span>Alertes
   </div>
+  <div class="nav-item" id="nav-previsions" onclick="showView('previsions')">
+  <span class="ni"></span>Prévisions 24h
+  </div>
   <div class="nav-section">Capteurs Actifs</div>
-  <div class="nav-item"><span class="ni">&#x1F321;</span>Température</div>
-  <div class="nav-item"><span class="ni">&#x1F4A7;</span>Hygromètre</div>
-  <div class="nav-item"><span class="ni">&#x1F300;</span>Baromètre</div>
-  <div class="nav-item"><span class="ni">&#x1F4A8;</span>Anémomètre</div>
-  <div class="nav-item"><span class="ni">&#x1F327;</span>Pluviomètre</div>
-  <div class="nav-item"><span class="ni">&#x2600;</span>Pyranomètre</div>
+  <div class="nav-item"><span class="ni"></span>Température</div>
+  <div class="nav-item"><span class="ni"></span>Hygromètre</div>
+  <div class="nav-item"><span class="ni"></span>Baromètre</div>
+  <div class="nav-item"><span class="ni"></span>Anémomètre</div>
+  <div class="nav-item"><span class="ni"></span>Pluviomètre</div>
+  <div class="nav-item"><span class="ni"></span>Pyranomètre</div>
   <div class="sidebar-footer">ESP32 · Firmware v2.1.4</div>
 </nav>
 
@@ -398,15 +401,62 @@ body{font-family:'Space Grotesk',sans-serif;background:#f0f4fa;color:#0a1f4e;}
     
   </div>
 </div>
+<!-- PREVISIONS -->
+<div id="view-previsions" style="display:none">
+  <div class="sec">
+    <div class="sec-accent" style="background:linear-gradient(#0a3cbf,#00e5ff)"></div>
+    <h2>Prévisions Météo sur 24h</h2>
+  </div>
+
+  <!-- Carte principale -->
+  <div style="background:rgba(255,255,255,0.85);border:1px solid rgba(10,35,90,0.10);border-radius:20px;padding:32px;margin-bottom:20px;text-align:center;box-shadow:0 4px 20px rgba(10,35,90,0.06);">
+    <div id="prev-icone" style="font-size:5rem;margin-bottom:16px;">🌤️</div>
+    <div id="prev-message" style="font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;color:#0a1e5e;margin-bottom:12px;">En attente de données...</div>
+    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:16px;">
+      <div style="background:rgba(10,30,94,0.05);border-radius:12px;padding:12px 24px;">
+        <div style="font-size:.65rem;color:#6b85b0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Confiance</div>
+        <div id="prev-confiance" style="font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:#0a3cbf;">--</div>
+      </div>
+      <div style="background:rgba(10,30,94,0.05);border-radius:12px;padding:12px 24px;">
+        <div style="font-size:.65rem;color:#6b85b0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Variation pression (24h)</div>
+        <div id="prev-delta" style="font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:#0a3cbf;">-- hPa</div>
+      </div>
+      <div style="background:rgba(10,30,94,0.05);border-radius:12px;padding:12px 24px;">
+        <div style="font-size:.65rem;color:#6b85b0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Dernière mise à jour</div>
+        <div id="prev-update" style="font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:#0a3cbf;">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Explication -->
+  <div style="background:rgba(10,30,94,0.04);border:1px solid rgba(10,35,90,0.08);border-radius:16px;padding:20px;">
+    <div style="font-size:.75rem;font-weight:700;color:#0a1e5e;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">Comment ça fonctionne ?</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.5rem;">📉</span>
+        <span style="font-size:.8rem;color:#374151;">Pression baisse &gt; 3 hPa → Pluie probable</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.5rem;">📈</span>
+        <span style="font-size:.8rem;color:#374151;">Pression monte &gt; 3 hPa → Beau temps</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.5rem;">➡️</span>
+        <span style="font-size:.8rem;color:#374151;">Pression stable → Temps stable</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* Navigation */
 function showView(v){
-  ['home','overview','alerts'].forEach(n=>{
+  ['home','overview','alerts','previsions'].forEach(n=>{
     document.getElementById('view-'+n).style.display = n===v ? (n==='home'?'flex':'block') : 'none';
     document.getElementById('nav-'+n).classList.toggle('active', n===v);
   });
   if(v==='overview' || v==='alerts') connectWS();
+  if(v==='previsions') chargerPrevisions();
 }
 
 /* Clock */
@@ -596,6 +646,27 @@ function connectWS(){
   }
   connect();
 }
+/* Prévisions */
+function chargerPrevisions(){
+  fetch('/api/previsions')
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById('prev-icone').textContent = d.icone || '🌤️';
+    document.getElementById('prev-message').textContent = d.message || 'Données insuffisantes';
+    document.getElementById('prev-confiance').textContent = d.confiance || '--';
+    document.getElementById('prev-delta').textContent = (d.delta ? d.delta + ' hPa' : '-- hPa');
+    document.getElementById('prev-update').textContent = new Date().toLocaleTimeString('fr-FR');
+  })
+  .catch(()=>{
+    document.getElementById('prev-message').textContent = 'Erreur de connexion';
+  });
+}
+
+// Rafraichir les previsions toutes les 5 minutes
+setInterval(()=>{
+  const prevView = document.getElementById('view-previsions');
+  if(prevView && prevView.style.display !== 'none') chargerPrevisions();
+}, 5 * 60 * 1000);
 </script>
 </body>
 </html>
