@@ -164,7 +164,7 @@ app.post('/api/data', authESP32, (req, res) => {
       pluviometrie
     )
     VALUES (?, ?, ?, ?, ?, ?)
-  `;
+  `
   ;
 
   db.query(
@@ -331,10 +331,10 @@ app.get('/api/previsions', (req, res) => {
     const deuxiemeMoitie = result.slice(milieu);
 
     const moyennePremiere =
-      premiereMoitie.reduce((sum, r) => sum + r.pression, 0) / premiereMoitie.length;
+      premiereMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / premiereMoitie.length;
 
     const moyenneDeuxieme =
-      deuxiemeMoitie.reduce((sum, r) => sum + r.pression, 0) / deuxiemeMoitie.length;
+      deuxiemeMoitie.reduce((sum, r) => sum + r.pression_atmospherique, 0) / deuxiemeMoitie.length;
 
     const delta = moyenneDeuxieme - moyennePremiere;
 
