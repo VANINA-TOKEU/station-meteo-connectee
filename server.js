@@ -37,7 +37,7 @@ const db = mysql.createPool({
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10
-});;
+});
 
 // ===============================
 // DONNÉES TEMPS RÉEL
